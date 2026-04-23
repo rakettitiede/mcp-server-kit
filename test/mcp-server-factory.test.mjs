@@ -141,7 +141,9 @@ describe("createMcpServerFactory", () => {
       await srv.close();
     });
 
-    it("search returns empty results when consumer throws", async () => {
+    it("search returns empty results when consumer throws", async (t) => {
+      const errorMock = t.mock.method(console, "error");
+
       const factory = createMcpServerFactory({
         ...validConfig,
         search: async () => {
@@ -157,6 +159,10 @@ describe("createMcpServerFactory", () => {
       });
       const parsed = JSON.parse(result.content[0].text);
       assert.deepEqual(parsed, { results: [] });
+
+      assert.strictEqual(errorMock.mock.callCount(), 1);
+      assert.strictEqual(errorMock.mock.calls[0].arguments[0], "Search error:");
+      assert.match(errorMock.mock.calls[0].arguments[1].message, /upstream failure/);
 
       await client.close();
       await srv.close();
