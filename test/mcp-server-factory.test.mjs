@@ -142,7 +142,7 @@ describe("createMcpServerFactory", () => {
     });
 
     it("search returns empty results when consumer throws", async (t) => {
-      const errorMock = t.mock.method(console, "error");
+      const errorMock = t.mock.method(console, "error", () => {});
 
       const factory = createMcpServerFactory({
         ...validConfig,
@@ -169,7 +169,7 @@ describe("createMcpServerFactory", () => {
     });
 
     it("fetch tool logs and rethrows when consumer throws", async (t) => {
-      const errorMock = t.mock.method(console, "error");
+      const errorMock = t.mock.method(console, "error", () => {});
 
       const factory = createMcpServerFactory({
         ...validConfig,
