@@ -1,4 +1,6 @@
 import express from "express";
+import { createMcpServerFactory } from "./mcp-server-factory.mjs";
+import { createSseRouter } from "./sse-router.mjs";
 
 export function createMcpRouters(config) {
   const {
@@ -22,14 +24,21 @@ export function createMcpRouters(config) {
     );
   }
 
+  const createServer = createMcpServerFactory({
+    name,
+    version,
+    search,
+    fetch: fetchFn,
+    searchDescription: openapi?.searchDescription,
+    fetchDescription: openapi?.fetchDescription,
+  });
+
   const notImplemented = (_req, res) =>
     res
       .status(501)
       .json({ error: "not implemented — kit scaffold v0.1.0" });
 
-  const sseRouter = express.Router();
-  sseRouter.get("/sse", notImplemented);
-  sseRouter.post("/messages", notImplemented);
+  const sseRouter = createSseRouter({ createServer });
 
   const streamableHttpRouter = express.Router();
   streamableHttpRouter.post("/mcp", notImplemented);
