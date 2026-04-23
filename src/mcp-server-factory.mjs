@@ -37,7 +37,7 @@ export function createMcpServerFactory({
             content: [{ type: "text", text: JSON.stringify({ results }) }],
           };
         } catch (error) {
-          console.error("Search error:", error);
+          console.error(`🔴 MCP search tool failed for query=${JSON.stringify(query)}: ${error.message}`, error);
           return {
             content: [{ type: "text", text: JSON.stringify({ results: [] }) }],
           };
@@ -53,8 +53,13 @@ export function createMcpServerFactory({
         inputSchema: { id: z.string().min(1) },
       },
       async ({ id }) => {
-        const doc = await fetchFn(id);
-        return { content: [{ type: "text", text: JSON.stringify(doc) }] };
+        try {
+          const doc = await fetchFn(id);
+          return { content: [{ type: "text", text: JSON.stringify(doc) }] };
+        } catch (error) {
+          console.error(`🔴 MCP fetch tool failed for id=${JSON.stringify(id)}: ${error.message}`, error);
+          throw error;
+        }
       },
     );
 

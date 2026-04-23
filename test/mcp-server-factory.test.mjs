@@ -161,8 +161,34 @@ describe("createMcpServerFactory", () => {
       assert.deepEqual(parsed, { results: [] });
 
       assert.strictEqual(errorMock.mock.callCount(), 1);
-      assert.strictEqual(errorMock.mock.calls[0].arguments[0], "Search error:");
-      assert.match(errorMock.mock.calls[0].arguments[1].message, /upstream failure/);
+      assert.match(errorMock.mock.calls[0].arguments[0], /🔴 MCP search tool failed/);
+      assert.match(errorMock.mock.calls[0].arguments[0], /upstream failure/);
+
+      await client.close();
+      await srv.close();
+    });
+
+    it("fetch tool logs and rethrows when consumer throws", async (t) => {
+      const errorMock = t.mock.method(console, "error");
+
+      const factory = createMcpServerFactory({
+        ...validConfig,
+        fetch: async () => {
+          throw new Error("fetch boom");
+        },
+      });
+      const srv = factory();
+      const client = await connectPair(srv);
+
+      const result = await client.callTool({
+        name: "fetch",
+        arguments: { id: "bad-id" },
+      });
+      assert.strictEqual(result.isError, true);
+
+      assert.strictEqual(errorMock.mock.callCount(), 1);
+      assert.match(errorMock.mock.calls[0].arguments[0], /🔴 MCP fetch tool failed/);
+      assert.match(errorMock.mock.calls[0].arguments[0], /fetch boom/);
 
       await client.close();
       await srv.close();
