@@ -1,0 +1,47 @@
+{
+  "name": "@rakettitiede/mcp-server-kit",
+  "version": "0.1.0",
+  "description": "Opinionated facade for building MCP servers with SSE + Streamable HTTP + REST transports",
+  "type": "module",
+  "main": "./src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "express",
+    "sse",
+    "streamable-http",
+    "openapi"
+  ],
+  "author": "Rakettitiede Oy",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rakettitiede/mcp-server-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rakettitiede/mcp-server-kit/issues"
+  },
+  "homepage": "https://github.com/rakettitiede/mcp-server-kit#readme",
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "express": "^4.18.0 || ^5.0.0",
+    "zod": "^3.24.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
