@@ -1,4 +1,4 @@
-import express from "express";
+import { createApiRouter } from "./api-router.mjs";
 import { createMcpServerFactory } from "./mcp-server-factory.mjs";
 import { createSseRouter } from "./sse-router.mjs";
 import { createStreamableHttpRouter } from "./streamable-http-router.mjs";
@@ -34,20 +34,9 @@ export function createMcpRouters(config) {
     fetchDescription: openapi?.fetchDescription,
   });
 
-  const notImplemented = (_req, res) =>
-    res
-      .status(501)
-      .json({ error: "not implemented — kit scaffold v0.1.0" });
-
   const sseRouter = createSseRouter({ createServer });
 
   const streamableHttpRouter = createStreamableHttpRouter({ createServer });
-
-  const apiRouter = express.Router();
-  apiRouter.get("/api/v1/search", notImplemented);
-  apiRouter.get("/api/v1/fetch", notImplemented);
-  if (refresh) apiRouter.post("/api/v1/refresh", notImplemented);
-  apiRouter.get("/openapi.json", notImplemented);
 
   const mcpMeta = {
     startupLogs: {
@@ -74,6 +63,13 @@ export function createMcpRouters(config) {
       components: { schemas: {} },
     },
   };
+
+  const apiRouter = createApiRouter({
+    search,
+    fetch: fetchFn,
+    refresh,
+    openapiSpec: mcpMeta.openapiSpec,
+  });
 
   return { sseRouter, streamableHttpRouter, apiRouter, mcpMeta };
 }
