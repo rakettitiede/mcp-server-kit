@@ -1,6 +1,7 @@
 import express from "express";
 import { createMcpServerFactory } from "./mcp-server-factory.mjs";
 import { createSseRouter } from "./sse-router.mjs";
+import { createStreamableHttpRouter } from "./streamable-http-router.mjs";
 
 export function createMcpRouters(config) {
   const {
@@ -40,9 +41,7 @@ export function createMcpRouters(config) {
 
   const sseRouter = createSseRouter({ createServer });
 
-  const streamableHttpRouter = express.Router();
-  streamableHttpRouter.post("/mcp", notImplemented);
-  streamableHttpRouter.get("/mcp", notImplemented);
+  const streamableHttpRouter = createStreamableHttpRouter({ createServer });
 
   const apiRouter = express.Router();
   apiRouter.get("/api/v1/search", notImplemented);
