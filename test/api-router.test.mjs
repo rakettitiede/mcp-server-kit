@@ -1,7 +1,8 @@
-import { describe, it } from "node:test";
+import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
 import { createApiRouter } from "../src/api-router.mjs";
+import { HttpError } from "../src/http-error.mjs";
 
 function makeApp(opts) {
   const app = express();
@@ -209,3 +210,147 @@ describe("createApiRouter", () => {
     });
   });
 });
+
+const handlerSpecs = [
+  {
+    name: "search",
+    method: "GET",
+    path: "/api/v1/search?q=foo",
+    body: undefined,
+    fallbackMessage: "Search failed",
+    makeApp: (throwingFn) =>
+      makeApp({ search: throwingFn, fetch: stubFetch, openapiSpec: stubSpec }),
+  },
+  {
+    name: "fetch",
+    method: "GET",
+    path: "/api/v1/fetch?id=foo",
+    body: undefined,
+    fallbackMessage: "Fetch failed",
+    makeApp: (throwingFn) =>
+      makeApp({ search: stubSearch, fetch: throwingFn, openapiSpec: stubSpec }),
+  },
+  {
+    name: "refresh",
+    method: "POST",
+    path: "/api/v1/refresh",
+    body: { token: "x" },
+    fallbackMessage: "Refresh failed",
+    makeApp: (throwingFn) =>
+      makeApp({ search: stubSearch, fetch: stubFetch, refresh: throwingFn, openapiSpec: stubSpec }),
+  },
+];
+
+function makeRequest(base, spec) {
+  const opts = { method: spec.method };
+  if (spec.body) {
+    opts.headers = { "content-type": "application/json" };
+    opts.body = JSON.stringify(spec.body);
+  }
+  return fetch(`${base}${spec.path}`, opts);
+}
+
+for (const spec of handlerSpecs) {
+  describe(`${spec.name} handler — typed status errors`, () => {
+    let originalError;
+    before(() => {
+      originalError = console.error;
+      console.error = () => {};
+    });
+    after(() => {
+      console.error = originalError;
+    });
+
+    it("honors err.status 400", async (t) => {
+      const throwing = async () => { const e = new Error("bad"); e.status = 400; throw e; };
+      const { server, base } = await listen(spec.makeApp(throwing));
+      t.after(() => server.close());
+      const res = await makeRequest(base, spec);
+      assert.equal(res.status, 400);
+      assert.deepEqual(await res.json(), { error: "bad" });
+    });
+
+    it("honors err.status 404", async (t) => {
+      const throwing = async () => { const e = new Error("not found"); e.status = 404; throw e; };
+      const { server, base } = await listen(spec.makeApp(throwing));
+      t.after(() => server.close());
+      const res = await makeRequest(base, spec);
+      assert.equal(res.status, 404);
+      assert.deepEqual(await res.json(), { error: "not found" });
+    });
+
+    it("honors err.status 599", async (t) => {
+      const throwing = async () => { const e = new Error("edge"); e.status = 599; throw e; };
+      const { server, base } = await listen(spec.makeApp(throwing));
+      t.after(() => server.close());
+      const res = await makeRequest(base, spec);
+      assert.equal(res.status, 599);
+      assert.deepEqual(await res.json(), { error: "edge" });
+    });
+
+    it("falls through to 500 when err has no status", async (t) => {
+      const throwing = async () => { throw new Error("plain"); };
+      const { server, base } = await listen(spec.makeApp(throwing));
+      t.after(() => server.close());
+      const res = await makeRequest(base, spec);
+      assert.equal(res.status, 500);
+      assert.deepEqual(await res.json(), { error: spec.fallbackMessage });
+    });
+
+    it("falls through to 500 when err.status is a string", async (t) => {
+      const throwing = async () => { const e = new Error("string status"); e.status = "400"; throw e; };
+      const { server, base } = await listen(spec.makeApp(throwing));
+      t.after(() => server.close());
+      const res = await makeRequest(base, spec);
+      assert.equal(res.status, 500);
+      assert.deepEqual(await res.json(), { error: spec.fallbackMessage });
+    });
+
+    it("falls through to 500 when err.status is below 400", async (t) => {
+      const throwing = async () => { const e = new Error("low"); e.status = 200; throw e; };
+      const { server, base } = await listen(spec.makeApp(throwing));
+      t.after(() => server.close());
+      const res = await makeRequest(base, spec);
+      assert.equal(res.status, 500);
+      assert.deepEqual(await res.json(), { error: spec.fallbackMessage });
+    });
+
+    it("falls through to 500 when err.status is 600 or higher", async (t) => {
+      const throwing = async () => { const e = new Error("high"); e.status = 700; throw e; };
+      const { server, base } = await listen(spec.makeApp(throwing));
+      t.after(() => server.close());
+      const res = await makeRequest(base, spec);
+      assert.equal(res.status, 500);
+      assert.deepEqual(await res.json(), { error: spec.fallbackMessage });
+    });
+
+    it("honors err.body as response envelope", async (t) => {
+      const envelope = { error: "Validation failed", fields: { token: "required" } };
+      const throwing = async () => { const e = new Error("Validation failed"); e.status = 422; e.body = envelope; throw e; };
+      const { server, base } = await listen(spec.makeApp(throwing));
+      t.after(() => server.close());
+      const res = await makeRequest(base, spec);
+      assert.equal(res.status, 422);
+      assert.deepEqual(await res.json(), envelope);
+    });
+
+    it("works with HttpError class — status only", async (t) => {
+      const throwing = async () => { throw new HttpError(400, "Missing token"); };
+      const { server, base } = await listen(spec.makeApp(throwing));
+      t.after(() => server.close());
+      const res = await makeRequest(base, spec);
+      assert.equal(res.status, 400);
+      assert.deepEqual(await res.json(), { error: "Missing token" });
+    });
+
+    it("works with HttpError class — with body envelope", async (t) => {
+      const envelope = { error: "Validation failed", fields: { token: "required" } };
+      const throwing = async () => { throw new HttpError(422, "Validation failed", envelope); };
+      const { server, base } = await listen(spec.makeApp(throwing));
+      t.after(() => server.close());
+      const res = await makeRequest(base, spec);
+      assert.equal(res.status, 422);
+      assert.deepEqual(await res.json(), envelope);
+    });
+  });
+}
