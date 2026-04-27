@@ -1,5 +1,12 @@
 import express from "express";
 
+function sendErrorResponse(res, err, fallbackMessage) {
+  if (typeof err.status === "number" && err.status >= 400 && err.status < 600) {
+    return res.status(err.status).json(err.body ?? { error: err.message });
+  }
+  res.status(500).json({ error: fallbackMessage });
+}
+
 export function createApiRouter({ search, fetch: fetchFn, refresh, openapiSpec }) {
   if (typeof search !== "function") {
     throw new Error("createApiRouter: `search` must be a function");
@@ -23,7 +30,7 @@ export function createApiRouter({ search, fetch: fetchFn, refresh, openapiSpec }
       res.json({ results, count: results.length });
     } catch (err) {
       console.error(`🔴 REST /search failed for q=${JSON.stringify(q)}: ${err.message}`, err);
-      res.status(500).json({ error: "Search failed" });
+      return sendErrorResponse(res, err, "Search failed");
     }
   });
 
@@ -37,7 +44,7 @@ export function createApiRouter({ search, fetch: fetchFn, refresh, openapiSpec }
       res.json(doc);
     } catch (err) {
       console.error(`🔴 REST /fetch failed for id=${JSON.stringify(id)}: ${err.message}`, err);
-      res.status(500).json({ error: "Fetch failed" });
+      return sendErrorResponse(res, err, "Fetch failed");
     }
   });
 
@@ -48,7 +55,7 @@ export function createApiRouter({ search, fetch: fetchFn, refresh, openapiSpec }
         res.json(result ?? { ok: true });
       } catch (err) {
         console.error(`🔴 REST /refresh failed: ${err.message}`, err);
-        res.status(500).json({ error: "Refresh failed" });
+        return sendErrorResponse(res, err, "Refresh failed");
       }
     });
   }
