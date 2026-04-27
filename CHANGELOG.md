@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/rakettitiede/mcp-server-kit/compare/v1.0.0...v1.1.0) (2026-04-27)
+
+
+### Features
+
+* honor err.status and err.body from handlers; export HttpError ([#10](https://github.com/rakettitiede/mcp-server-kit/issues/10)) ([95ccc26](https://github.com/rakettitiede/mcp-server-kit/commit/95ccc265e9b0bfcaecc15cbc32be3e7e5a50d8e4))
+
 ## 1.0.0 (2026-04-27)
 
 
