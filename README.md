@@ -89,6 +89,38 @@ The package owns the spec's `openapi` version, `paths`, and reserved schemas (`D
 | `textSchema` | Inlined as `Document.properties.text` |
 | `metadataSchema` | Inlined as `Document.properties.metadata` |
 
+## Serving documentation
+
+The package serves the merged OpenAPI spec at `GET /openapi.json` automatically — `apiRouter` includes that route. You don't need to wire anything to expose the spec.
+
+What you do need to wire is a UI, if you want one. The kit deliberately ships no UI dependency. Pick whichever renderer fits your stack:
+
+### Swagger UI
+
+```bash
+npm install swagger-ui-express
+```
+
+```js
+import swaggerUi from "swagger-ui-express";
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(mcpMeta.openapiSpec));
+```
+
+### Redoc
+
+```js
+app.get("/docs", (req, res) => {
+  res.send(`<!doctype html><html><body>
+    <redoc spec-url="/openapi.json"></redoc>
+    <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+  </body></html>`);
+});
+```
+
+### Custom GPT Actions
+
+Point your Custom GPT at `https://yourserver.com/openapi.json`. The Document envelope (`id`, `title`, `text`, `url`, `metadata`) matches Custom GPT's retrieval contract — your server is GPT-Actions-compatible by construction.
+
 ## License
 
 MIT — Rakettitiede Oy
