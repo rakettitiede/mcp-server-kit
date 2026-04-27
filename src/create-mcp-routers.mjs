@@ -1,5 +1,6 @@
 import { createApiRouter } from "./api-router.mjs";
 import { createMcpServerFactory } from "./mcp-server-factory.mjs";
+import { buildOpenapiSpec } from "./openapi-spec.mjs";
 import { createSseRouter } from "./sse-router.mjs";
 import { createStreamableHttpRouter } from "./streamable-http-router.mjs";
 
@@ -38,6 +39,13 @@ export function createMcpRouters(config) {
 
   const streamableHttpRouter = createStreamableHttpRouter({ createServer });
 
+  const openapiSpec = buildOpenapiSpec({
+    name,
+    version,
+    hasRefresh: typeof refresh === "function",
+    openapi,
+  });
+
   const mcpMeta = {
     startupLogs: {
       sse: "📡 SSE: GET /sse  |  POST /messages?sessionId=...",
@@ -55,20 +63,14 @@ export function createMcpRouters(config) {
       openapi: { "openapi-json": "/openapi.json" },
       ...(refresh && { refresh: { refresh: "/api/v1/refresh" } }),
     },
-    openapiSpec: {
-      openapi: "3.0.3",
-      info: { title: name, version, ...(openapi.info || {}) },
-      ...(openapi.servers && { servers: openapi.servers }),
-      paths: {},
-      components: { schemas: {} },
-    },
+    openapiSpec,
   };
 
   const apiRouter = createApiRouter({
     search,
     fetch: fetchFn,
     refresh,
-    openapiSpec: mcpMeta.openapiSpec,
+    openapiSpec,
   });
 
   return { sseRouter, streamableHttpRouter, apiRouter, mcpMeta };
