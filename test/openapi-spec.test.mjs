@@ -198,6 +198,74 @@ describe("buildOpenapiSpec", () => {
     });
   });
 
+  describe("per-operation overrides", () => {
+    const opSpecs = [
+      { name: "search", path: "/api/v1/search", method: "get", defaultSummary: "Search for records" },
+      { name: "fetch", path: "/api/v1/fetch", method: "get", defaultSummary: "Fetch a full record by ID" },
+      { name: "refresh", path: "/api/v1/refresh", method: "post", defaultSummary: "Refresh the underlying data source" },
+    ];
+
+    for (const op of opSpecs) {
+      const base = op.name === "refresh" ? { ...minimal, hasRefresh: true } : minimal;
+
+      it(`${op.name}: default summary preserved`, () => {
+        const spec = buildOpenapiSpec(base);
+        assert.equal(spec.paths[op.path][op.method].summary, op.defaultSummary);
+      });
+
+      it(`${op.name}: default description not emitted`, () => {
+        const spec = buildOpenapiSpec(base);
+        assert.equal(spec.paths[op.path][op.method].description, undefined);
+        assert.equal("description" in spec.paths[op.path][op.method], false);
+      });
+
+      it(`${op.name}: consumer summary flows through`, () => {
+        const spec = buildOpenapiSpec({
+          ...base,
+          openapi: { operations: { [op.name]: { summary: "Custom summary" } } },
+        });
+        assert.equal(spec.paths[op.path][op.method].summary, "Custom summary");
+      });
+
+      it(`${op.name}: consumer description flows through`, () => {
+        const spec = buildOpenapiSpec({
+          ...base,
+          openapi: { operations: { [op.name]: { description: "Custom description" } } },
+        });
+        assert.equal(spec.paths[op.path][op.method].description, "Custom description");
+      });
+
+      it(`${op.name}: both summary and description together`, () => {
+        const spec = buildOpenapiSpec({
+          ...base,
+          openapi: { operations: { [op.name]: { summary: "S", description: "D" } } },
+        });
+        assert.equal(spec.paths[op.path][op.method].summary, "S");
+        assert.equal(spec.paths[op.path][op.method].description, "D");
+      });
+    }
+
+    it("all three operations with both summary and description", () => {
+      const spec = buildOpenapiSpec({
+        ...minimal,
+        hasRefresh: true,
+        openapi: {
+          operations: {
+            search: { summary: "S-search", description: "D-search" },
+            fetch: { summary: "S-fetch", description: "D-fetch" },
+            refresh: { summary: "S-refresh", description: "D-refresh" },
+          },
+        },
+      });
+      assert.equal(spec.paths["/api/v1/search"].get.summary, "S-search");
+      assert.equal(spec.paths["/api/v1/search"].get.description, "D-search");
+      assert.equal(spec.paths["/api/v1/fetch"].get.summary, "S-fetch");
+      assert.equal(spec.paths["/api/v1/fetch"].get.description, "D-fetch");
+      assert.equal(spec.paths["/api/v1/refresh"].post.summary, "S-refresh");
+      assert.equal(spec.paths["/api/v1/refresh"].post.description, "D-refresh");
+    });
+  });
+
   describe("always present", () => {
     it("spec.openapi === '3.1.0'", () => {
       const spec = buildOpenapiSpec(minimal);
