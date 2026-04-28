@@ -2,6 +2,15 @@ const RESERVED_SCHEMA_NAMES = ["Document", "SearchResult", "SearchResponse", "Er
 
 const DEFAULT_TEXT_SCHEMA = { type: "object", additionalProperties: true };
 const DEFAULT_METADATA_SCHEMA = { type: "object", additionalProperties: true };
+const CUSTOM_GPT_DESCRIPTION_SOFT_LIMIT = 280;
+
+function warnIfDescriptionTooLong(name, description) {
+  if (typeof description === "string" && description.length > CUSTOM_GPT_DESCRIPTION_SOFT_LIMIT) {
+    console.warn(
+      `⚠️  openapi.operations.${name}.description is ${description.length} chars — Custom GPT rejects descriptions over 300. Trim before importing the spec.`,
+    );
+  }
+}
 
 function buildPaths({ hasRefresh, refreshRequestSchema, refreshResponseSchema, searchOp, fetchOp, refreshOp }) {
   const paths = {
@@ -179,6 +188,10 @@ export function buildOpenapiSpec({ name, version, hasRefresh, openapi = {} }) {
   const searchOp = operations.search ?? {};
   const fetchOp = operations.fetch ?? {};
   const refreshOp = operations.refresh ?? {};
+
+  warnIfDescriptionTooLong("search", searchOp.description);
+  warnIfDescriptionTooLong("fetch", fetchOp.description);
+  warnIfDescriptionTooLong("refresh", refreshOp.description);
 
   const spec = {
     openapi: "3.1.0",
