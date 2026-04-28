@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/rakettitiede/mcp-server-kit/compare/v1.1.0...v1.2.0) (2026-04-28)
+
+
+### Features
+
+* openapi 3.1.0, configurable refresh schemas, document 400 on refresh ([#12](https://github.com/rakettitiede/mcp-server-kit/issues/12)) ([8a4ebf0](https://github.com/rakettitiede/mcp-server-kit/commit/8a4ebf09a0853411f7807f4236a31d5452b0a528))
+
 ## [1.1.0](https://github.com/rakettitiede/mcp-server-kit/compare/v1.0.0...v1.1.0) (2026-04-27)
 
 
