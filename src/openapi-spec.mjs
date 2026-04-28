@@ -3,7 +3,7 @@ const RESERVED_SCHEMA_NAMES = ["Document", "SearchResult", "SearchResponse", "Er
 const DEFAULT_TEXT_SCHEMA = { type: "object", additionalProperties: true };
 const DEFAULT_METADATA_SCHEMA = { type: "object", additionalProperties: true };
 
-function buildPaths({ hasRefresh }) {
+function buildPaths({ hasRefresh, refreshRequestSchema, refreshResponseSchema }) {
   const paths = {
     "/api/v1/search": {
       get: {
@@ -62,15 +62,16 @@ function buildPaths({ hasRefresh }) {
   };
 
   if (hasRefresh) {
+    const reqRequired = Array.isArray(refreshRequestSchema.required) && refreshRequestSchema.required.length > 0;
     paths["/api/v1/refresh"] = {
       post: {
         operationId: "Refresh",
         summary: "Refresh the underlying data source",
         requestBody: {
-          required: false,
+          required: reqRequired,
           content: {
             "application/json": {
-              schema: { type: "object", additionalProperties: true },
+              schema: refreshRequestSchema,
             },
           },
         },
@@ -79,10 +80,11 @@ function buildPaths({ hasRefresh }) {
             description: "Refresh result",
             content: {
               "application/json": {
-                schema: { type: "object", additionalProperties: true },
+                schema: refreshResponseSchema,
               },
             },
           },
+          400: { $ref: "#/components/responses/BadRequest" },
           500: { $ref: "#/components/responses/ServerError" },
         },
       },
@@ -168,15 +170,17 @@ export function buildOpenapiSpec({ name, version, hasRefresh, openapi = {} }) {
   const consumerSchemas = openapi.schemas || {};
   const textSchema = openapi.textSchema || DEFAULT_TEXT_SCHEMA;
   const metadataSchema = openapi.metadataSchema || DEFAULT_METADATA_SCHEMA;
+  const refreshRequestSchema = openapi.refreshRequestSchema || { type: "object" };
+  const refreshResponseSchema = openapi.refreshResponseSchema || { type: "object" };
 
   const spec = {
-    openapi: "3.0.3",
+    openapi: "3.1.0",
     info: {
       title: name,
       version,
       ...(openapi.info || {}),
     },
-    paths: buildPaths({ hasRefresh }),
+    paths: buildPaths({ hasRefresh, refreshRequestSchema, refreshResponseSchema }),
     components: {
       schemas: {
         ...buildSchemas({ textSchema, metadataSchema }),

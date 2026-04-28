@@ -88,6 +88,8 @@ The package owns the spec's `openapi` version, `paths`, and reserved schemas (`D
 | `schemas` | Merge into `components.schemas`. Reserved names throw at startup. |
 | `textSchema` | Inlined as `Document.properties.text` |
 | `metadataSchema` | Inlined as `Document.properties.metadata` |
+| `refreshRequestSchema` | JSON-Schema for the refresh request body. Default: `{ type: "object" }`. When the schema has a non-empty `required` array, `requestBody.required` is set to `true` in the spec. |
+| `refreshResponseSchema` | JSON-Schema for the refresh 200 response body. Default: `{ type: "object" }`. |
 
 ## Error handling
 

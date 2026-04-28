@@ -118,10 +118,90 @@ describe("buildOpenapiSpec", () => {
     });
   });
 
+  describe("refresh schemas and 400 response", () => {
+    const withRefresh = { ...minimal, hasRefresh: true };
+
+    it("default refresh requestBody schema is { type: 'object' }", () => {
+      const spec = buildOpenapiSpec(withRefresh);
+      const schema = spec.paths["/api/v1/refresh"].post.requestBody.content["application/json"].schema;
+      assert.deepStrictEqual(schema, { type: "object" });
+    });
+
+    it("default refresh 200 response schema is { type: 'object' }", () => {
+      const spec = buildOpenapiSpec(withRefresh);
+      const schema = spec.paths["/api/v1/refresh"].post.responses[200].content["application/json"].schema;
+      assert.deepStrictEqual(schema, { type: "object" });
+    });
+
+    it("consumer refreshRequestSchema flows through to the spec", () => {
+      const refreshRequestSchema = {
+        type: "object",
+        properties: { token: { type: "string" } },
+        required: ["token"],
+      };
+      const spec = buildOpenapiSpec({ ...withRefresh, openapi: { refreshRequestSchema } });
+      const schema = spec.paths["/api/v1/refresh"].post.requestBody.content["application/json"].schema;
+      assert.deepStrictEqual(schema, refreshRequestSchema);
+    });
+
+    it("consumer refreshResponseSchema flows through to the spec", () => {
+      const refreshResponseSchema = {
+        type: "object",
+        properties: { message: { type: "string" } },
+        required: ["message"],
+      };
+      const spec = buildOpenapiSpec({ ...withRefresh, openapi: { refreshResponseSchema } });
+      const schema = spec.paths["/api/v1/refresh"].post.responses[200].content["application/json"].schema;
+      assert.deepStrictEqual(schema, refreshResponseSchema);
+    });
+
+    it("requestBody.required is true when refreshRequestSchema has non-empty required array", () => {
+      const refreshRequestSchema = {
+        type: "object",
+        properties: { token: { type: "string" } },
+        required: ["token"],
+      };
+      const spec = buildOpenapiSpec({ ...withRefresh, openapi: { refreshRequestSchema } });
+      assert.equal(spec.paths["/api/v1/refresh"].post.requestBody.required, true);
+    });
+
+    it("requestBody.required is false when refreshRequestSchema has no required array", () => {
+      const refreshRequestSchema = {
+        type: "object",
+        properties: { token: { type: "string" } },
+      };
+      const spec = buildOpenapiSpec({ ...withRefresh, openapi: { refreshRequestSchema } });
+      assert.equal(spec.paths["/api/v1/refresh"].post.requestBody.required, false);
+    });
+
+    it("requestBody.required is false when refreshRequestSchema has empty required array", () => {
+      const refreshRequestSchema = {
+        type: "object",
+        properties: { token: { type: "string" } },
+        required: [],
+      };
+      const spec = buildOpenapiSpec({ ...withRefresh, openapi: { refreshRequestSchema } });
+      assert.equal(spec.paths["/api/v1/refresh"].post.requestBody.required, false);
+    });
+
+    it("requestBody.required is false when no refreshRequestSchema is provided", () => {
+      const spec = buildOpenapiSpec(withRefresh);
+      assert.equal(spec.paths["/api/v1/refresh"].post.requestBody.required, false);
+    });
+
+    it("refresh path documents a 400 response referencing BadRequest", () => {
+      const spec = buildOpenapiSpec(withRefresh);
+      assert.deepStrictEqual(
+        spec.paths["/api/v1/refresh"].post.responses[400],
+        { $ref: "#/components/responses/BadRequest" },
+      );
+    });
+  });
+
   describe("always present", () => {
-    it("spec.openapi === '3.0.3'", () => {
+    it("spec.openapi === '3.1.0'", () => {
       const spec = buildOpenapiSpec(minimal);
-      assert.equal(spec.openapi, "3.0.3");
+      assert.equal(spec.openapi, "3.1.0");
     });
 
     it("spec.paths has /api/v1/search and /api/v1/fetch", () => {
