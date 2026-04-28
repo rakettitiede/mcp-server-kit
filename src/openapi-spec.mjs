@@ -3,12 +3,13 @@ const RESERVED_SCHEMA_NAMES = ["Document", "SearchResult", "SearchResponse", "Er
 const DEFAULT_TEXT_SCHEMA = { type: "object", additionalProperties: true };
 const DEFAULT_METADATA_SCHEMA = { type: "object", additionalProperties: true };
 
-function buildPaths({ hasRefresh, refreshRequestSchema, refreshResponseSchema }) {
+function buildPaths({ hasRefresh, refreshRequestSchema, refreshResponseSchema, searchOp, fetchOp, refreshOp }) {
   const paths = {
     "/api/v1/search": {
       get: {
         operationId: "Search",
-        summary: "Search for records",
+        summary: searchOp.summary ?? "Search for records",
+        ...(searchOp.description !== undefined && { description: searchOp.description }),
         parameters: [
           {
             name: "q",
@@ -35,7 +36,8 @@ function buildPaths({ hasRefresh, refreshRequestSchema, refreshResponseSchema })
     "/api/v1/fetch": {
       get: {
         operationId: "Fetch",
-        summary: "Fetch a full record by ID",
+        summary: fetchOp.summary ?? "Fetch a full record by ID",
+        ...(fetchOp.description !== undefined && { description: fetchOp.description }),
         parameters: [
           {
             name: "id",
@@ -66,7 +68,8 @@ function buildPaths({ hasRefresh, refreshRequestSchema, refreshResponseSchema })
     paths["/api/v1/refresh"] = {
       post: {
         operationId: "Refresh",
-        summary: "Refresh the underlying data source",
+        summary: refreshOp.summary ?? "Refresh the underlying data source",
+        ...(refreshOp.description !== undefined && { description: refreshOp.description }),
         requestBody: {
           required: reqRequired,
           content: {
@@ -172,6 +175,10 @@ export function buildOpenapiSpec({ name, version, hasRefresh, openapi = {} }) {
   const metadataSchema = openapi.metadataSchema || DEFAULT_METADATA_SCHEMA;
   const refreshRequestSchema = openapi.refreshRequestSchema || { type: "object" };
   const refreshResponseSchema = openapi.refreshResponseSchema || { type: "object" };
+  const operations = openapi.operations ?? {};
+  const searchOp = operations.search ?? {};
+  const fetchOp = operations.fetch ?? {};
+  const refreshOp = operations.refresh ?? {};
 
   const spec = {
     openapi: "3.1.0",
@@ -180,7 +187,7 @@ export function buildOpenapiSpec({ name, version, hasRefresh, openapi = {} }) {
       version,
       ...(openapi.info || {}),
     },
-    paths: buildPaths({ hasRefresh, refreshRequestSchema, refreshResponseSchema }),
+    paths: buildPaths({ hasRefresh, refreshRequestSchema, refreshResponseSchema, searchOp, fetchOp, refreshOp }),
     components: {
       schemas: {
         ...buildSchemas({ textSchema, metadataSchema }),

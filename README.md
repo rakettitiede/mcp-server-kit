@@ -90,6 +90,31 @@ The package owns the spec's `openapi` version, `paths`, and reserved schemas (`D
 | `metadataSchema` | Inlined as `Document.properties.metadata` |
 | `refreshRequestSchema` | JSON-Schema for the refresh request body. Default: `{ type: "object" }`. When the schema has a non-empty `required` array, `requestBody.required` is set to `true` in the spec. |
 | `refreshResponseSchema` | JSON-Schema for the refresh 200 response body. Default: `{ type: "object" }`. |
+| `operations` | Per-operation `summary` and `description` overrides (see below) |
+
+#### Per-operation overrides
+
+Custom GPT and other LLM-driven consumers use the OpenAPI `summary` and `description` strings during action selection — generic defaults carry little signal. Override them via `operations`:
+
+```js
+openapi: {
+  operations: {
+    search: {
+      summary: "Search anonymized candidate profiles",
+      description: "Returns up to 20 matches ranked by skill overlap and semantic similarity.",
+    },
+    fetch: {
+      summary: "Fetch a full anonymized candidate or project document",
+    },
+    refresh: {
+      summary: "Refresh the federated talent database",
+      description: "Requires an admin token. Not exposed to public consumers.",
+    },
+  },
+}
+```
+
+All keys are optional. Default summaries are preserved when not overridden. Descriptions are omitted from the spec when not set, keeping the JSON clean.
 
 ## Error handling
 
