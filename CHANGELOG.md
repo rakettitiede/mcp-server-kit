@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/rakettitiede/mcp-server-kit/compare/v1.2.0...v1.3.0) (2026-04-28)
+
+
+### Features
+
+* add openapi.operations config for per-operation summary/description overrides ([#14](https://github.com/rakettitiede/mcp-server-kit/issues/14)) ([9e701a7](https://github.com/rakettitiede/mcp-server-kit/commit/9e701a773aaabfbccc473a730c1c36a6fc531549))
+
 ## [1.2.0](https://github.com/rakettitiede/mcp-server-kit/compare/v1.1.0...v1.2.0) (2026-04-28)
 
 
