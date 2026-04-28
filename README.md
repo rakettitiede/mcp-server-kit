@@ -116,6 +116,8 @@ openapi: {
 
 All keys are optional. Default summaries are preserved when not overridden. Descriptions are omitted from the spec when not set, keeping the JSON clean.
 
+**Custom GPT description length:** ChatGPT Actions rejects per-operation descriptions over 300 chars. The kit emits a `console.warn` at spec-generation time when any description exceeds 280 chars (20-char headroom). Keep descriptions concise — they're for LLM action selection, not full documentation.
+
 ## Error handling
 
 Handlers can signal HTTP status by throwing an error with a numeric `status` property in the 400–599 range. The kit honors `err.status` and responds accordingly instead of the default 500.

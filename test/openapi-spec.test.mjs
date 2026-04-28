@@ -266,6 +266,71 @@ describe("buildOpenapiSpec", () => {
     });
   });
 
+  describe("description length warnings", () => {
+    it("no warning when descriptions are at exactly 280 chars", (t) => {
+      t.mock.method(console, "warn", () => {});
+      const desc = "x".repeat(280);
+      buildOpenapiSpec({
+        ...minimal,
+        hasRefresh: true,
+        openapi: {
+          operations: {
+            search: { description: desc },
+            fetch: { description: desc },
+            refresh: { description: desc },
+          },
+        },
+      });
+      assert.equal(console.warn.mock.calls.length, 0);
+    });
+
+    it("warns when a description exceeds 280 chars", (t) => {
+      t.mock.method(console, "warn", () => {});
+      const desc = "x".repeat(281);
+      buildOpenapiSpec({
+        ...minimal,
+        openapi: { operations: { search: { description: desc } } },
+      });
+      assert.equal(console.warn.mock.calls.length, 1);
+      const msg = console.warn.mock.calls[0].arguments[0];
+      assert.ok(msg.includes("search"), "mentions search");
+      assert.ok(msg.includes("281"), "mentions length");
+    });
+
+    it("warns independently for each over-limit description", (t) => {
+      t.mock.method(console, "warn", () => {});
+      buildOpenapiSpec({
+        ...minimal,
+        hasRefresh: true,
+        openapi: {
+          operations: {
+            search: { description: "x".repeat(281) },
+            refresh: { description: "x".repeat(350) },
+          },
+        },
+      });
+      assert.equal(console.warn.mock.calls.length, 2);
+      const msgs = console.warn.mock.calls.map((c) => c.arguments[0]);
+      assert.ok(msgs.some((m) => m.includes("search") && m.includes("281")));
+      assert.ok(msgs.some((m) => m.includes("refresh") && m.includes("350")));
+    });
+
+    it("no warning when description is undefined", (t) => {
+      t.mock.method(console, "warn", () => {});
+      buildOpenapiSpec(minimal);
+      assert.equal(console.warn.mock.calls.length, 0);
+    });
+
+    it("no warning when description is empty string", (t) => {
+      t.mock.method(console, "warn", () => {});
+      buildOpenapiSpec({
+        ...minimal,
+        openapi: { operations: { search: { description: "" } } },
+      });
+      assert.equal(console.warn.mock.calls.length, 0);
+    });
+  });
+
   describe("always present", () => {
     it("spec.openapi === '3.1.0'", () => {
       const spec = buildOpenapiSpec(minimal);
