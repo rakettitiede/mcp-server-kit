@@ -92,6 +92,53 @@ The package owns the spec's `openapi` version, `paths`, and reserved schemas (`D
 | `refreshResponseSchema` | JSON-Schema for the refresh 200 response body. Default: `{ type: "object" }`. |
 | `operations` | Per-operation `summary` and `description` overrides (see below) |
 
+#### Polymorphic `text` via `oneOf`
+
+`fetch` is not limited to returning a single text shape. A common pattern is to use ID prefixes to route between multiple record types — `article:uuid`, `book:uuid` — and document each shape as a separate component schema, then point `textSchema` at a `oneOf`:
+
+```js
+openapi: {
+  schemas: {
+    ArticleText: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        body: { type: "string" },
+        publishedAt: { type: "string" },
+      },
+    },
+    BookText: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        author: { type: "string" },
+        isbn: { type: "string" },
+        chapters: { type: "integer" },
+      },
+    },
+  },
+  textSchema: {
+    description: "Full document content (varies by record type)",
+    oneOf: [
+      { $ref: "#/components/schemas/ArticleText" },
+      { $ref: "#/components/schemas/BookText" },
+    ],
+  },
+}
+```
+
+Your `fetch` implementation branches on the ID prefix to return the matching shape:
+
+```js
+export async function doFetch(id) {
+  if (id.startsWith("article:")) return loadArticle(id);
+  if (id.startsWith("book:")) return loadBook(id);
+  return notFoundDocument(id);
+}
+```
+
+The kit doesn't validate what `fetch` returns under `text` — only the published OpenAPI spec describes it. Consumers reading the spec (Custom GPT, generated SDKs, human reviewers) see the `oneOf` and know to expect multiple shapes.
+
 #### Per-operation overrides
 
 Custom GPT and other LLM-driven consumers use the OpenAPI `summary` and `description` strings during action selection — generic defaults carry little signal. Override them via `operations`:
@@ -100,14 +147,14 @@ Custom GPT and other LLM-driven consumers use the OpenAPI `summary` and `descrip
 openapi: {
   operations: {
     search: {
-      summary: "Search anonymized candidate profiles",
-      description: "Returns up to 20 matches ranked by skill overlap and semantic similarity.",
+      summary: "Search the knowledge base",
+      description: "Returns up to 20 ranked matches for the free-text query.",
     },
     fetch: {
-      summary: "Fetch a full anonymized candidate or project document",
+      summary: "Fetch a full record by ID",
     },
     refresh: {
-      summary: "Refresh the federated talent database",
+      summary: "Refresh the underlying data source",
       description: "Requires an admin token. Not exposed to public consumers.",
     },
   },
