@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/rakettitiede/mcp-server-kit/compare/v1.4.0...v2.0.0) (2026-05-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* `openapi.servers` config field is no longer used. The kit now derives `servers[0].url` per-request from `x-forwarded-proto`/`x-forwarded-host` headers (falling back to `req.protocol` and `req.headers.host`).
+
+### Features
+
+* derive OpenAPI servers[0].url from request headers ([#21](https://github.com/rakettitiede/mcp-server-kit/issues/21)) ([988853a](https://github.com/rakettitiede/mcp-server-kit/commit/988853a8a236fd007a99e082b8c7fc714d16271f))
+
 ## [1.4.0](https://github.com/rakettitiede/mcp-server-kit/compare/v1.3.0...v1.4.0) (2026-05-18)
 
 
