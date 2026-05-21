@@ -198,7 +198,7 @@ describe("createApiRouter", () => {
   });
 
   describe("GET /openapi.json", () => {
-    it("returns the openapiSpec passed in config", async (t) => {
+    it("returns the openapiSpec with servers derived from request", async (t) => {
       const app = makeApp({ search: stubSearch, fetch: stubFetch, openapiSpec: stubSpec });
       const { server, base } = await listen(app);
       t.after(() => server.close());
@@ -206,7 +206,11 @@ describe("createApiRouter", () => {
       const res = await fetch(`${base}/openapi.json`);
       assert.equal(res.status, 200);
       const body = await res.json();
-      assert.deepEqual(body, stubSpec);
+      const { port } = server.address();
+      assert.equal(body.openapi, stubSpec.openapi);
+      assert.deepEqual(body.info, stubSpec.info);
+      assert.deepEqual(body.paths, stubSpec.paths);
+      assert.deepEqual(body.servers, [{ url: `http://127.0.0.1:${port}` }]);
     });
   });
 });

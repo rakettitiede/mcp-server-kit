@@ -61,7 +61,12 @@ export function createApiRouter({ search, fetch: fetchFn, refresh, openapiSpec }
   }
 
   router.get("/openapi.json", (req, res) => {
-    res.json(openapiSpec);
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+    const host = req.headers["x-forwarded-host"] || req.headers.host;
+    res.json({
+      ...openapiSpec,
+      servers: [{ url: `${protocol}://${host}` }],
+    });
   });
 
   return router;
