@@ -65,13 +65,13 @@ describe("buildOpenapiSpec", () => {
       assert.equal(spec.info.title, "override");
     });
 
-    it("openapi.servers appears at spec.servers", () => {
+    it("openapi.servers is ignored (servers derived at request time)", () => {
       const servers = [{ url: "https://example.com" }];
       const spec = buildOpenapiSpec({
         ...minimal,
         openapi: { servers },
       });
-      assert.deepStrictEqual(spec.servers, servers);
+      assert.equal(spec.servers, undefined);
     });
 
     it("openapi.textSchema is inlined as Document.properties.text", () => {

@@ -24,7 +24,6 @@ const { sseRouter, streamableHttpRouter, apiRouter, mcpMeta } = createMcpRouters
   refresh: async (body) => ({ ok: true }),  // optional
   openapi: {
     info: { description: "My MCP server" },
-    servers: [{ url: "https://example.com" }],
     textSchema: { type: "object", properties: { /* your domain */ } },
     metadataSchema: { type: "object", properties: { /* your domain */ } },
   },
@@ -84,7 +83,6 @@ The package owns the spec's `openapi` version, `paths`, and reserved schemas (`D
 | Field | Behavior |
 |---|---|
 | `info` | Shallow merge over package defaults |
-| `servers` | Replace |
 | `schemas` | Merge into `components.schemas`. Reserved names throw at startup. |
 | `textSchema` | Inlined as `Document.properties.text` |
 | `metadataSchema` | Inlined as `Document.properties.metadata` |
@@ -201,6 +199,10 @@ throw new HttpError(422, "Validation failed", {
 **Safety guard:** only a numeric `status` in 400–599 is honored; everything else (including string-typed status, plain `Error`, network errors from libraries, etc.) falls through to 500. This is intentional — common HTTP-client error objects like axios responses don't put `.status` directly on the Error, so they won't accidentally leak upstream status codes.
 
 **`http-errors` interop:** `createError(400, "Missing token")` from the popular `http-errors` package sets `.status` and `.message` and works out of the box with this contract — no need to use `HttpError` if you already use that library.
+
+### Server URL
+
+The kit derives `servers[0].url` per request from `x-forwarded-proto` and `x-forwarded-host` headers (falling back to `req.protocol` and `req.headers.host`). This works correctly behind reverse proxies like Cloud Run. The `openapi.servers` config field is no longer used.
 
 ## Serving documentation
 

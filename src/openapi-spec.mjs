@@ -210,9 +210,5 @@ export function buildOpenapiSpec({ name, version, hasRefresh, openapi = {} }) {
     },
   };
 
-  if (openapi.servers) {
-    spec.servers = openapi.servers;
-  }
-
   return spec;
 }
