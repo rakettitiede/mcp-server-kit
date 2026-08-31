@@ -140,7 +140,7 @@ describe("createStreamableHttpRouter", () => {
       }
     });
 
-    it("GET /mcp with unknown session returns 400", async (t) => {
+    it("GET /mcp with unknown session returns 404", async (t) => {
       t.mock.method(console, "log", () => {});
       t.mock.method(console, "warn", () => {});
       t.mock.method(console, "error", () => {});
@@ -155,9 +155,9 @@ describe("createStreamableHttpRouter", () => {
           method: "GET",
           headers: { "mcp-session-id": "nonexistent" },
         });
-        assert.equal(res.status, 400);
+        assert.equal(res.status, 404);
         const body = await res.json();
-        assert.equal(body.error, "Invalid or expired session");
+        assert.equal(body.error, "Session not found");
       } finally {
         server.closeAllConnections();
         await new Promise((resolve) => server.close(resolve));
