@@ -19,7 +19,7 @@ export function createStreamableHttpRouter({ createServer }) {
       if (sessionId) {
         const session = sessions[sessionId];
         if (!session) {
-          res.status(400).json({ error: "Invalid or expired session" });
+          res.status(404).json({ error: "Session not found" });
           return;
         }
         await session.transport.handleRequest(req, res, req.body);
@@ -61,7 +61,7 @@ export function createStreamableHttpRouter({ createServer }) {
       }
       const session = sessions[sessionId];
       if (!session) {
-        res.status(400).json({ error: "Invalid or expired session" });
+        res.status(404).json({ error: "Session not found" });
         return;
       }
       console.log(
@@ -85,7 +85,7 @@ export function createStreamableHttpRouter({ createServer }) {
       }
       const session = sessions[sessionId];
       if (!session) {
-        res.status(400).json({ error: "Invalid or expired session" });
+        res.status(404).json({ error: "Session not found" });
         return;
       }
       console.log(`🔗 [Streamable HTTP] closing session ${sessionId}`);
