@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.1](https://github.com/rakettitiede/mcp-server-kit/compare/v2.0.0...v2.0.1) (2026-09-01)
+
+
+### Bug Fixes
+
+* return 404 for unknown Streamable HTTP sessions instead of 400 ([370ba8a](https://github.com/rakettitiede/mcp-server-kit/commit/370ba8a055576ac6dc437400ad16421724dcead4))
+* return 404 for unknown Streamable HTTP sessions instead of 400 ([d15d7a1](https://github.com/rakettitiede/mcp-server-kit/commit/d15d7a17743b42d55a38661deb8c44a51e52c93c))
+
 ## [2.0.0](https://github.com/rakettitiede/mcp-server-kit/compare/v1.4.0...v2.0.0) (2026-05-21)
 
 
