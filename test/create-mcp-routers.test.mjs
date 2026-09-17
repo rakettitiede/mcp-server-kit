@@ -48,6 +48,16 @@ describe("createMcpRouters", () => {
         },
       );
     });
+
+    it("throws when registerRefreshTool is true without refresh", () => {
+      assert.throws(
+        () => createMcpRouters({ ...validConfig, registerRefreshTool: true }),
+        {
+          message:
+            "createMcpRouters: `refresh` must be a function when `registerRefreshTool` is true",
+        },
+      );
+    });
   });
 
   describe("return shape", () => {
@@ -72,6 +82,17 @@ describe("createMcpRouters", () => {
         refresh: () => {},
       });
       assert.equal(typeof mcpMeta.startupLogs.refresh, "string");
+      assert.match(mcpMeta.startupLogs.refresh, /POST \/api\/v1\/refresh/);
+      assert.doesNotMatch(mcpMeta.startupLogs.refresh, /MCP tool/);
+    });
+
+    it("startup log mentions MCP tool when registerRefreshTool is true", () => {
+      const { mcpMeta } = createMcpRouters({
+        ...validConfig,
+        refresh: () => {},
+        registerRefreshTool: true,
+      });
+      assert.match(mcpMeta.startupLogs.refresh, /MCP tool/);
     });
   });
 

@@ -40,6 +40,17 @@ describe("createMcpServerFactory", () => {
         /`fetch` must be a function/,
       );
     });
+
+    it("throws when registerRefreshTool is true without refresh", () => {
+      assert.throws(
+        () =>
+          createMcpServerFactory({
+            ...validConfig,
+            registerRefreshTool: true,
+          }),
+        /`refresh` must be a function when `registerRefreshTool` is true/,
+      );
+    });
   });
 
   describe("factory return", () => {
@@ -78,6 +89,26 @@ describe("createMcpServerFactory", () => {
       const srv = factory();
       assert.equal(srv._registeredTools.search.description, "Custom search");
       assert.equal(srv._registeredTools.fetch.description, "Custom fetch");
+    });
+
+    it("does not register refresh by default", () => {
+      const factory = createMcpServerFactory({
+        ...validConfig,
+        refresh: async () => ({ ok: true }),
+      });
+      const srv = factory();
+      assert.equal(srv._registeredTools.refresh, undefined);
+    });
+
+    it("registers refresh when registerRefreshTool is true", () => {
+      const factory = createMcpServerFactory({
+        ...validConfig,
+        refresh: async () => ({ ok: true }),
+        registerRefreshTool: true,
+        refreshDescription: "Custom refresh",
+      });
+      const srv = factory();
+      assert.equal(srv._registeredTools.refresh.description, "Custom refresh");
     });
   });
 
@@ -189,6 +220,61 @@ describe("createMcpServerFactory", () => {
       assert.strictEqual(errorMock.mock.callCount(), 1);
       assert.match(errorMock.mock.calls[0].arguments[0], /🔴 MCP fetch tool failed/);
       assert.match(errorMock.mock.calls[0].arguments[0], /fetch boom/);
+
+      await client.close();
+      await srv.close();
+    });
+
+    it("refresh tool invokes consumer refresh with empty body", async () => {
+      const refreshFn = mock.fn(async (body) => ({
+        message: "refreshed",
+        body,
+      }));
+      const factory = createMcpServerFactory({
+        ...validConfig,
+        refresh: refreshFn,
+        registerRefreshTool: true,
+      });
+      const srv = factory();
+      const client = await connectPair(srv);
+
+      const result = await client.callTool({
+        name: "refresh",
+        arguments: {},
+      });
+      assert.equal(refreshFn.mock.calls.length, 1);
+      assert.deepEqual(refreshFn.mock.calls[0].arguments[0], {});
+
+      const parsed = JSON.parse(result.content[0].text);
+      assert.equal(parsed.message, "refreshed");
+
+      await client.close();
+      await srv.close();
+    });
+
+    it("refresh tool logs and rethrows when consumer throws", async (t) => {
+      const errorMock = t.mock.method(console, "error", () => {});
+      const { HttpError } = await import("../src/http-error.mjs");
+
+      const factory = createMcpServerFactory({
+        ...validConfig,
+        refresh: async () => {
+          throw new HttpError(409, "Refresh already in progress");
+        },
+        registerRefreshTool: true,
+      });
+      const srv = factory();
+      const client = await connectPair(srv);
+
+      const result = await client.callTool({
+        name: "refresh",
+        arguments: {},
+      });
+      assert.strictEqual(result.isError, true);
+
+      assert.strictEqual(errorMock.mock.callCount(), 1);
+      assert.match(errorMock.mock.calls[0].arguments[0], /🔴 MCP refresh tool failed/);
+      assert.match(errorMock.mock.calls[0].arguments[0], /already in progress/);
 
       await client.close();
       await srv.close();

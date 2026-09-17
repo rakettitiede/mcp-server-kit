@@ -144,7 +144,8 @@ export async function doRefresh(body) {
 | `POST /mcp` + `GET /mcp` | Streamable HTTP (preferred) | MCP clients |
 | `GET /api/v1/search` | REST | Custom GPT, Slack bots, direct |
 | `GET /api/v1/fetch` | REST | Custom GPT, Slack bots, direct |
-| `POST /api/v1/refresh` | REST | Admin, CI/CD |
+| `POST /api/v1/refresh` | REST | Admin, CI/CD, on-demand callers |
+| MCP `refresh` tool | MCP | Opt-in via `registerRefreshTool: true` — Claude connectors, etc. |
 | `GET /openapi.json` | — | Custom GPT import |
 
 ## Testing

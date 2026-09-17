@@ -49,6 +49,7 @@ app.listen(8080);
 | `search` | `(query) => Promise<{ results }>` | yes | Search implementation. Throws → see [Error handling](#error-handling) |
 | `fetch` | `(id) => Promise<Document>` | yes | Fetch-by-id implementation. Throws → see [Error handling](#error-handling) |
 | `refresh` | `(body) => Promise<any>` | no | If provided, mounts `POST /api/v1/refresh`. Throws → see [Error handling](#error-handling) |
+| `registerRefreshTool` | boolean | no | When `true` (and `refresh` is set), also registers an MCP `refresh` tool with an empty input schema. Defaults to `false` so consumers that still take a live token in the body (e.g. network MCP) do not expose it to Claude connectors. |
 | `openapi` | object | no | OpenAPI spec overrides (see below) |
 
 Returns `{ sseRouter, streamableHttpRouter, apiRouter, mcpMeta }`. The package also exports `HttpError` (see [Error handling](#error-handling) below).
@@ -88,6 +89,7 @@ The package owns the spec's `openapi` version, `paths`, and reserved schemas (`D
 | `metadataSchema` | Inlined as `Document.properties.metadata` |
 | `refreshRequestSchema` | JSON-Schema for the refresh request body. Default: `{ type: "object" }`. When the schema has a non-empty `required` array, `requestBody.required` is set to `true` in the spec. |
 | `refreshResponseSchema` | JSON-Schema for the refresh 200 response body. Default: `{ type: "object" }`. |
+| `searchDescription` / `fetchDescription` / `refreshDescription` | MCP tool descriptions (separate from OpenAPI `operations.*.description`). |
 | `operations` | Per-operation `summary` and `description` overrides (see below) |
 
 #### Polymorphic `text` via `oneOf`
