@@ -11,6 +11,7 @@ export function createMcpRouters(config) {
     search,
     fetch: fetchFn,
     refresh,
+    registerRefreshTool = false,
     openapi = {},
   } = config;
 
@@ -25,14 +26,22 @@ export function createMcpRouters(config) {
       "createMcpRouters: `refresh` must be a function when provided",
     );
   }
+  if (registerRefreshTool && typeof refresh !== "function") {
+    throw new Error(
+      "createMcpRouters: `refresh` must be a function when `registerRefreshTool` is true",
+    );
+  }
 
   const createServer = createMcpServerFactory({
     name,
     version,
     search,
     fetch: fetchFn,
+    refresh,
+    registerRefreshTool,
     searchDescription: openapi?.searchDescription,
     fetchDescription: openapi?.fetchDescription,
+    refreshDescription: openapi?.refreshDescription,
   });
 
   const sseRouter = createSseRouter({ createServer });
@@ -53,7 +62,11 @@ export function createMcpRouters(config) {
       search: "🔍 Search: GET /api/v1/search?q=...",
       fetch: "🎯 Fetch: GET /api/v1/fetch?id=",
       openapi: "📋 OpenAPI: GET /openapi.json",
-      ...(refresh && { refresh: "💖 Refresh: POST /api/v1/refresh" }),
+      ...(refresh && {
+        refresh: registerRefreshTool
+          ? "💖 Refresh: POST /api/v1/refresh + MCP tool"
+          : "💖 Refresh: POST /api/v1/refresh",
+      }),
     },
     endpoints: {
       sse: { sse: "/sse", messages: "/messages" },

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+* optional MCP `refresh` tool via `registerRefreshTool` (default off; REST refresh unchanged)
+
 ## [2.0.1](https://github.com/rakettitiede/mcp-server-kit/compare/v2.0.0...v2.0.1) (2026-09-01)
 
 
