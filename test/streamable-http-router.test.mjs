@@ -2,11 +2,16 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import express from "express";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createStreamableHttpRouter } from "../src/streamable-http-router.mjs";
 
 const mockCreateServer = () => ({
   connect: async () => {},
   close: async () => {},
+});
+const realCreateServer = () => new McpServer({
+  name: "streamable-http-test",
+  version: "1.0.0",
 });
 
 async function startApp(router) {
@@ -68,12 +73,12 @@ describe("createStreamableHttpRouter", () => {
   });
 
   describe("HTTP behavior", () => {
-    it("POST /mcp with initialize request returns 200 and mcp-session-id", async (t) => {
+    it("POST /mcp with initialize request returns JSON without a session id", async (t) => {
       t.mock.method(console, "log", () => {});
       t.mock.method(console, "error", () => {});
 
       const router = createStreamableHttpRouter({
-        createServer: mockCreateServer,
+        createServer: realCreateServer,
       });
       const { server, base } = await startApp(router);
 
@@ -108,10 +113,8 @@ describe("createStreamableHttpRouter", () => {
           );
         });
         assert.equal(res.statusCode, 200);
-        assert.ok(
-          res.headers["mcp-session-id"],
-          "mcp-session-id header present",
-        );
+        assert.equal(res.headers["content-type"], "application/json");
+        assert.equal(res.headers["mcp-session-id"], undefined);
         res.destroy();
       } finally {
         server.closeAllConnections();
@@ -119,7 +122,7 @@ describe("createStreamableHttpRouter", () => {
       }
     });
 
-    it("GET /mcp without mcp-session-id returns 400", async (t) => {
+    it("GET /mcp returns 405 because the optional listening stream is disabled", async (t) => {
       t.mock.method(console, "log", () => {});
       t.mock.method(console, "warn", () => {});
       t.mock.method(console, "error", () => {});
@@ -131,16 +134,17 @@ describe("createStreamableHttpRouter", () => {
 
       try {
         const res = await fetch(`${base}/mcp`, { method: "GET" });
-        assert.equal(res.status, 400);
+        assert.equal(res.status, 405);
+        assert.equal(res.headers.get("allow"), "POST");
         const body = await res.json();
-        assert.equal(body.error, "mcp-session-id header required");
+        assert.equal(body.error, "Method not allowed");
       } finally {
         server.closeAllConnections();
         await new Promise((resolve) => server.close(resolve));
       }
     });
 
-    it("GET /mcp with unknown session returns 404", async (t) => {
+    it("GET /mcp with a stale session id still returns 405, not 404", async (t) => {
       t.mock.method(console, "log", () => {});
       t.mock.method(console, "warn", () => {});
       t.mock.method(console, "error", () => {});
@@ -155,16 +159,16 @@ describe("createStreamableHttpRouter", () => {
           method: "GET",
           headers: { "mcp-session-id": "nonexistent" },
         });
-        assert.equal(res.status, 404);
+        assert.equal(res.status, 405);
         const body = await res.json();
-        assert.equal(body.error, "Session not found");
+        assert.equal(body.error, "Method not allowed");
       } finally {
         server.closeAllConnections();
         await new Promise((resolve) => server.close(resolve));
       }
     });
 
-    it("DELETE /mcp without mcp-session-id returns 400", async (t) => {
+    it("DELETE /mcp returns 405 because there are no server sessions", async (t) => {
       t.mock.method(console, "log", () => {});
       t.mock.method(console, "error", () => {});
 
@@ -175,7 +179,8 @@ describe("createStreamableHttpRouter", () => {
 
       try {
         const res = await fetch(`${base}/mcp`, { method: "DELETE" });
-        assert.equal(res.status, 400);
+        assert.equal(res.status, 405);
+        assert.equal(res.headers.get("allow"), "POST");
       } finally {
         server.closeAllConnections();
         await new Promise((resolve) => server.close(resolve));

@@ -55,7 +55,10 @@ app.listen(8080);
 Returns `{ sseRouter, streamableHttpRouter, apiRouter, mcpMeta }`. The package also exports `HttpError` (see [Error handling](#error-handling) below).
 
 - `sseRouter` — Express Router exposing `GET /sse` + `POST /messages`
-- `streamableHttpRouter` — Express Router exposing `POST /mcp` + `GET /mcp` + `DELETE /mcp`
+- `streamableHttpRouter` — stateless Express Router exposing `POST /mcp`. Each
+  request gets a fresh server and transport, so it is safe behind autoscaling
+  load balancers. Optional `GET /mcp` listening streams and session termination
+  via `DELETE /mcp` return `405 Method Not Allowed`.
 - `apiRouter` — Express Router exposing `GET /api/v1/search`, `GET /api/v1/fetch`, optional `POST /api/v1/refresh`, `GET /openapi.json`
 - `mcpMeta` — metadata object: `{ startupLogs, endpoints, openapiSpec }`
 
