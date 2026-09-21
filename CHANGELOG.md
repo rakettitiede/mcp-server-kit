@@ -7,6 +7,13 @@
 * optional MCP `refresh` tool via `registerRefreshTool` (default off; REST refresh unchanged)
 * make Streamable HTTP stateless for serverless and autoscaled deployments
 
+## [2.2.0](https://github.com/rakettitiede/mcp-server-kit/compare/v2.1.0...v2.2.0) (2026-09-21)
+
+
+### Features
+
+* make Streamable HTTP stateless ([#28](https://github.com/rakettitiede/mcp-server-kit/issues/28)) ([d5ce1a5](https://github.com/rakettitiede/mcp-server-kit/commit/d5ce1a5486ab642d6bda23efbf898f7e7400ff1c))
+
 ## [2.1.0](https://github.com/rakettitiede/mcp-server-kit/compare/v2.0.1...v2.1.0) (2026-09-17)
 
 
