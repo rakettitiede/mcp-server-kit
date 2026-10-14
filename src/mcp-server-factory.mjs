@@ -18,6 +18,7 @@ export function createMcpServerFactory({
   searchDescription = DEFAULT_SEARCH_DESC,
   fetchDescription = DEFAULT_FETCH_DESC,
   refreshDescription = DEFAULT_REFRESH_DESC,
+  tools = [],
 }) {
   if (!name) throw new Error("createMcpServerFactory: `name` is required");
   if (!version)
@@ -96,6 +97,33 @@ export function createMcpServerFactory({
             };
           } catch (error) {
             console.error(`🔴 MCP refresh tool failed: ${error.message}`, error);
+            throw error;
+          }
+        },
+      );
+    }
+
+    for (const tool of tools) {
+      srv.registerTool(
+        tool.name,
+        {
+          title: tool.title ?? tool.name,
+          description: tool.description,
+          inputSchema: tool.inputSchema ?? {},
+        },
+        async (args) => {
+          try {
+            const result = await tool.handler(args);
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify(result ?? { ok: true }),
+                },
+              ],
+            };
+          } catch (error) {
+            console.error(`🔴 MCP ${tool.name} tool failed: ${error.message}`, error);
             throw error;
           }
         },

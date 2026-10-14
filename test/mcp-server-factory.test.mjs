@@ -112,6 +112,35 @@ describe("createMcpServerFactory", () => {
     });
   });
 
+  describe("custom tools", () => {
+    it("registers custom tools from tools array", () => {
+      const factory = createMcpServerFactory({
+        ...validConfig,
+        tools: [{
+          name: "status",
+          title: "Status",
+          description: "Get service status",
+          handler: async () => ({ ok: true }),
+        }],
+      });
+      const srv = factory();
+      assert.equal(srv._registeredTools.status.description, "Get service status");
+    });
+
+    it("defaults title to name when omitted", () => {
+      const factory = createMcpServerFactory({
+        ...validConfig,
+        tools: [{
+          name: "my_tool",
+          description: "A tool",
+          handler: async () => ({}),
+        }],
+      });
+      const srv = factory();
+      assert.ok(srv._registeredTools.my_tool);
+    });
+  });
+
   describe("tool invocation", () => {
     async function connectPair(srv) {
       const [ct, st] = InMemoryTransport.createLinkedPair();
@@ -275,6 +304,60 @@ describe("createMcpServerFactory", () => {
       assert.strictEqual(errorMock.mock.callCount(), 1);
       assert.match(errorMock.mock.calls[0].arguments[0], /🔴 MCP refresh tool failed/);
       assert.match(errorMock.mock.calls[0].arguments[0], /already in progress/);
+
+      await client.close();
+      await srv.close();
+    });
+
+    it("custom tool invokes handler and returns JSON-wrapped result", async () => {
+      const handler = mock.fn(async () => ({ count: 42, status: "healthy" }));
+      const factory = createMcpServerFactory({
+        ...validConfig,
+        tools: [{
+          name: "get_status",
+          description: "Get status",
+          handler,
+        }],
+      });
+      const srv = factory();
+      const client = await connectPair(srv);
+
+      const result = await client.callTool({
+        name: "get_status",
+        arguments: {},
+      });
+      assert.equal(handler.mock.calls.length, 1);
+
+      const parsed = JSON.parse(result.content[0].text);
+      assert.deepEqual(parsed, { count: 42, status: "healthy" });
+
+      await client.close();
+      await srv.close();
+    });
+
+    it("custom tool logs and rethrows when handler throws", async (t) => {
+      const errorMock = t.mock.method(console, "error", () => {});
+
+      const factory = createMcpServerFactory({
+        ...validConfig,
+        tools: [{
+          name: "failing_tool",
+          description: "Will fail",
+          handler: async () => { throw new Error("tool exploded"); },
+        }],
+      });
+      const srv = factory();
+      const client = await connectPair(srv);
+
+      const result = await client.callTool({
+        name: "failing_tool",
+        arguments: {},
+      });
+      assert.strictEqual(result.isError, true);
+
+      assert.strictEqual(errorMock.mock.callCount(), 1);
+      assert.match(errorMock.mock.calls[0].arguments[0], /🔴 MCP failing_tool tool failed/);
+      assert.match(errorMock.mock.calls[0].arguments[0], /tool exploded/);
 
       await client.close();
       await srv.close();
