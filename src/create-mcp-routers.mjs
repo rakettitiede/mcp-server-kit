@@ -13,6 +13,7 @@ export function createMcpRouters(config) {
     refresh,
     registerRefreshTool = false,
     openapi = {},
+    tools = [],
   } = config;
 
   if (!name) throw new Error("createMcpRouters: `name` is required");
@@ -42,6 +43,7 @@ export function createMcpRouters(config) {
     searchDescription: openapi?.searchDescription,
     fetchDescription: openapi?.fetchDescription,
     refreshDescription: openapi?.refreshDescription,
+    tools,
   });
 
   const sseRouter = createSseRouter({ createServer });
